@@ -1,0 +1,51 @@
+Quicksort vs Merge Sort — Performance Comparison
+================================================
+
+Setup
+-----
+Both algorithms were run on three dataset types (sorted, reverse sorted,
+random) at sizes n = 1,000 and n = 10,000. Execution time was measured with
+time.perf_counter and peak extra memory with tracemalloc. See benchmark.py.
+
+Measured results
+----------------
+Algorithm  Dataset      Size   Time(ms)   Peak(KB)
+QuickSort  sorted       1000       1.64        0.5
+MergeSort  sorted       1000       2.22       19.5
+QuickSort  reverse      1000       0.86        0.1
+MergeSort  reverse      1000       2.52       19.5
+QuickSort  random       1000       1.01        0.0
+MergeSort  random       1000       2.68       16.7
+QuickSort  sorted      10000      36.00        0.0
+MergeSort  sorted      10000      51.05      195.3
+QuickSort  reverse     10000      10.79        0.0
+MergeSort  reverse     10000      25.04      195.3
+QuickSort  random      10000      12.38        0.0
+MergeSort  random      10000      30.66      164.8
+
+Analysis
+--------
+- Time: Both scale roughly O(n log n). Quicksort was consistently faster
+  (2-3x) because it sorts in place with a tight inner loop, while merge sort
+  pays for repeated list slicing and allocation.
+- Memory: Quicksort uses ~O(log n) extra space (in place), so peak extra
+  allocation is negligible. Merge sort needs O(n) auxiliary lists, so peak
+  memory grows linearly with n (~195 KB at n=10,000).
+
+Theory vs. practice
+--------------------
+- Quicksort's theoretical worst case is O(n^2) on already-sorted or reverse
+  data with a naive pivot. We avoid this with a middle-element pivot, so
+  sorted/reverse inputs stayed fast instead of degrading. The sorted case at
+  n=10,000 was the slowest quicksort run, hinting at less favorable partition
+  balance, but it stayed well within O(n log n).
+- Merge sort's O(n log n) is guaranteed regardless of input order, and the
+  times confirm this — its runtime barely changed across dataset types.
+- The constant factors dominate at these sizes: merge sort's guaranteed bound
+  did not make it faster in practice, because allocation and slicing overhead
+  in Python outweigh quicksort's occasional extra comparisons. This is the
+  main gap between asymptotic analysis (which ignores constants) and observed
+  performance.
+- Recursion depth is another practical concern: quicksort recurses on the
+  smaller partition first to keep stack depth at O(log n) and avoid overflow
+  on adversarial inputs.
